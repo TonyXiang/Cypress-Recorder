@@ -111,7 +111,34 @@ function handleFirstConnection(): void {
     model.pushBlock(visitBlock)
       .then(block => chrome.runtime.sendMessage({ type: ControlAction.PUSH, payload: block }))
       .catch(err => new Error(err));
+    const server = codeGenerator.createServer();
+    model.addServer(server)
+      .then(block => chrome.runtime.sendMessage({ type: ControlAction.PUSH, payload: block }))
+      .catch(err => new Error(err));
   }
+}
+
+function handleWebRequest(details: chrome.webRequest.WebResponseCacheDetails):void {
+  model.addRoute(codeGenerator.createRoute(details))
+    .then(block => chrome.runtime.sendMessage({ type: ControlAction.PUSH, payload: block }))
+    .catch(err => new Error(err));
+}
+
+function addWebRequestRecorder() {
+  chrome.webRequest.onCompleted.addListener(
+    handleWebRequest,
+    // filters
+    {
+      urls: [
+        '<all_urls>',
+      ],
+      types: ['xmlhttprequest'],
+    },
+  );
+}
+
+function removeWebRequestRecorder() {
+  chrome.webRequest.onCompleted.removeListener(handleWebRequest);
 }
 
 /**
@@ -133,6 +160,7 @@ function handleNewConnection(portToEventRecorder: chrome.runtime.Port): void {
  */
 function startRecording(): Promise<void> {
   return new Promise((resolve, reject) => {
+    addWebRequestRecorder();
     injectEventRecorder()
       .then(() => model.updateStatus('on'))
       .then(() => {
@@ -145,6 +173,7 @@ function startRecording(): Promise<void> {
 
 stopRecording = () => (
   new Promise((resolve, reject) => {
+    removeWebRequestRecorder();
     ejectEventRecorder();
     chrome.webNavigation.onDOMContentLoaded.removeListener(injectEventRecorder);
     chrome.webNavigation.onCommitted.removeListener(checkForBadNavigation);

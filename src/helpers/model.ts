@@ -67,6 +67,50 @@ export default class Model {
     });
   }
 
+  addServer(block: string): Promise<Block> {
+    return new Promise((resolve, reject) => {
+      const exitServer = this.processedCode.find(item => item.value === block);
+      if (exitServer) {
+        resolve();
+      }
+      const newBlock: Block = {
+        value: block,
+        id: generate(),
+      };
+      this.processedCode.unshift(newBlock);
+      chrome.storage.local.set({ codeBlocks: this.processedCode }, () => {
+        if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
+        else resolve(newBlock);
+      });
+    });
+  }
+
+  addRoute(blocks: string[]): Promise<Block> {
+    return new Promise((resolve, reject) => {
+      const [atBlock, waitBlock] = blocks;
+
+      const exitAtBlock = this.processedCode.find(item => item.value === atBlock);
+      if (!exitAtBlock) {
+        const newAtBlock: Block = {
+          value: atBlock,
+          id: generate(),
+        };
+        this.processedCode.splice(1, 0, newAtBlock);
+      }
+
+      const newWaitBlock: Block = {
+        value: waitBlock,
+        id: generate(),
+      };
+      this.processedCode.push(newWaitBlock);
+
+      chrome.storage.local.set({ codeBlocks: this.processedCode }, () => {
+        if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
+        else resolve(newWaitBlock);
+      });
+    });
+  }
+
   /**
    * Deletes a code block from the code display and updates Chrome local storage.
    * @param index

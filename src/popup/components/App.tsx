@@ -11,6 +11,7 @@ export default () => {
   const [recStatus, setRecStatus] = React.useState<RecState>('off');
   const [codeBlocks, setCodeBlocks] = React.useState<Block[]>([]);
   const [shouldInfoDisplay, setShouldInfoDisplay] = React.useState<boolean>(false);
+  const [shouldWaitRequest, setShouldWaitRequest] = React.useState<boolean>(false);
   const [isValidTab, setIsValidTab] = React.useState<boolean>(true);
 
   const startRecording = (): void => {
@@ -37,6 +38,7 @@ export default () => {
 
   React.useEffect((): () => void => {
     function handleMessageFromBackground({ type, payload }: ActionWithPayload): void {
+      console.log(`app:handleMessageFromBackground:${type}`);
       setShouldInfoDisplay(false);
       if (type === ControlAction.START && isValidTab) startRecording();
       else if (type === ControlAction.STOP) stopRecording();
@@ -54,11 +56,16 @@ export default () => {
     if (action === ControlAction.START) startRecording();
     else if (action === ControlAction.STOP) stopRecording();
     else if (action === ControlAction.RESET) resetRecording();
+    console.log(`app:handleToggle-sendMessage-${action}`);
     chrome.runtime.sendMessage({ type: action });
   };
 
   const toggleInfoDisplay = (): void => {
     setShouldInfoDisplay(should => !should);
+  };
+
+  const toggleWaitRequest = (): void => {
+    setShouldWaitRequest(should => !should);
   };
 
   const copyToClipboard = async (): Promise<void> => {
@@ -97,7 +104,7 @@ export default () => {
       <Header shouldInfoDisplay={shouldInfoDisplay} toggleInfoDisplay={toggleInfoDisplay} />
       {
         (shouldInfoDisplay
-          ? <Info />
+          ? <Info shouldWaitRequest={shouldWaitRequest} toggleWaitRequest={toggleWaitRequest} />
           : (
             <Body
               codeBlocks={codeBlocks}

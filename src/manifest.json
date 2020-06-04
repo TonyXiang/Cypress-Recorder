@@ -9,9 +9,9 @@
     "clipboardWrite",
     "storage",
     "tabs",
-    "webNavigation"
-  ],
-  "optional_permissions": [
+    "webNavigation",
+    "webRequest",
+    "webRequestBlocking",
     "http://*/*",
     "https://*/*"
   ],
@@ -26,7 +26,7 @@
     "scripts": [
       "./background/background.js"
     ],
-    "persistent": false
+    "persistent": true
   },
   "browser_action": {
     "default_icon": "./cypressconeICON.png",

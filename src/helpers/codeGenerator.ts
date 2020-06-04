@@ -48,6 +48,14 @@ function handleSubmit(event: ParsedEvent): string {
   return `cy.get('${event.selector}').submit();`;
 }
 
+function handleRoute(details: chrome.webRequest.WebResponseCacheDetails): string[] {
+  const route = new URL(details.url).pathname.split('/').pop();
+  return [
+    `cy.route({url: /${route}/}).as('${route}');`,
+    `cy.wait('@${route}')`,
+  ];
+}
+
 export default {
   createBlock: (event: ParsedEvent): string => {
     switch (event.action) {
@@ -65,5 +73,8 @@ export default {
         throw new Error(`Unhandled event: ${event.action}`);
     }
   },
+  createRoute:
+    (details: chrome.webRequest.WebResponseCacheDetails): string[] => handleRoute(details),
   createVisit: (url: string): string => `cy.visit('${url}');`,
+  createServer: () => 'cy.server();',
 };

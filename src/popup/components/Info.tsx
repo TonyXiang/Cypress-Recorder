@@ -1,6 +1,11 @@
 import * as React from 'react';
 
-export default () => {
+export interface InfoProps {
+  toggleWaitRequest: () => void,
+  shouldWaitRequest: boolean,
+}
+
+export default ({ shouldWaitRequest, toggleWaitRequest }: InfoProps) => {
   const handleClick = (): void => {
     window.open('https://github.com/KabaLabs/Cypress-Recorder');
   };
@@ -31,6 +36,15 @@ export default () => {
         </span>
         . Give it a star!!
       </p>
+      <button
+        type="button"
+        id="waiteRequest"
+        className="button"
+        onClick={() => toggleWaitRequest()}
+      >
+        {shouldWaitRequest && 'Has Wait Request'}
+        {!shouldWaitRequest && 'Stopped Wait Request'}
+      </button>
     </div>
   );
 };
