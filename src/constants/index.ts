@@ -13,4 +13,6 @@ export enum ControlAction {
   DELETE = 'deleteBlock',
   MOVE = 'moveBlock',
   PUSH = 'pushBlock',
+  UPDATE = 'updateBlocks',
+  SETTINGS = 'updateSettings'
 }

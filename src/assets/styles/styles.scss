@@ -92,6 +92,12 @@ body {
     display: flex;
     justify-content: flex-end;
   }
+
+  & #settings-wrap {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+  }
   
   & #toggle {
     align-self: flex-start;

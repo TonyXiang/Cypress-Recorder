@@ -94,6 +94,10 @@ function checkForBadNavigation(
       || details.transitionQualifiers.includes('from_address_bar'))
   ) {
     control(stopRecording);
+  } else if (details.url.includes(session.originalHost)) {
+    model.pushBlock(codeGenerator.createUrl(details)).then(() => {
+      chrome.runtime.sendMessage({ type: ControlAction.UPDATE, payload: model.processedCode });
+    });
   }
 }
 
@@ -108,19 +112,24 @@ function handleFirstConnection(): void {
   if (session.lastURL !== session.activePort.sender.url) {
     const visitBlock = codeGenerator.createVisit(session.activePort.sender.url);
     session.lastURL = session.activePort.sender.url;
-    model.pushBlock(visitBlock)
-      .then(block => chrome.runtime.sendMessage({ type: ControlAction.PUSH, payload: block }))
-      .catch(err => new Error(err));
-    const server = codeGenerator.createServer();
-    model.addServer(server)
-      .then(block => chrome.runtime.sendMessage({ type: ControlAction.PUSH, payload: block }))
+
+    const promiseList = [model.pushBlock(visitBlock)];
+    if (model.settings.waitXHR) {
+      promiseList.push(model.addServer(codeGenerator.createServer()));
+    }
+    Promise.all(promiseList)
+      .then(() => {
+        chrome.runtime.sendMessage({ type: ControlAction.UPDATE, payload: model.processedCode });
+      })
       .catch(err => new Error(err));
   }
 }
 
 function handleWebRequest(details: chrome.webRequest.WebResponseCacheDetails):void {
   model.addRoute(codeGenerator.createRoute(details))
-    .then(block => chrome.runtime.sendMessage({ type: ControlAction.PUSH, payload: block }))
+    .then(() => {
+      chrome.runtime.sendMessage({ type: ControlAction.UPDATE, payload: model.processedCode });
+    })
     .catch(err => new Error(err));
 }
 
@@ -130,7 +139,7 @@ function addWebRequestRecorder() {
     // filters
     {
       urls: [
-        '<all_urls>',
+        '*://settle.winbaoxian.cn/*',
       ],
       types: ['xmlhttprequest'],
     },
@@ -160,7 +169,9 @@ function handleNewConnection(portToEventRecorder: chrome.runtime.Port): void {
  */
 function startRecording(): Promise<void> {
   return new Promise((resolve, reject) => {
-    addWebRequestRecorder();
+    if (model.settings.waitXHR) {
+      addWebRequestRecorder();
+    }
     injectEventRecorder()
       .then(() => model.updateStatus('on'))
       .then(() => {
@@ -173,7 +184,9 @@ function startRecording(): Promise<void> {
 
 stopRecording = () => (
   new Promise((resolve, reject) => {
-    removeWebRequestRecorder();
+    if (model.settings.waitXHR) {
+      removeWebRequestRecorder();
+    }
     ejectEventRecorder();
     chrome.webNavigation.onDOMContentLoaded.removeListener(injectEventRecorder);
     chrome.webNavigation.onCommitted.removeListener(checkForBadNavigation);
@@ -257,6 +270,14 @@ function handleMessage({ type, payload }: ActionWithPayload): Promise<void> {
         .catch(err => reject(err));
     } else if (type === ControlAction.MOVE) {
       model.moveBlock(payload.dragIdx, payload.dropIdx)
+        .then(() => resolve())
+        .catch(err => reject(err));
+    } else if (type === ControlAction.SETTINGS) {
+      model.updateSettings(payload)
+        .then(() => resolve())
+        .catch(err => reject(err));
+    } else if (type === ControlAction.UPDATE) {
+      model.updateCodeBlocks(payload)
         .then(() => resolve())
         .catch(err => reject(err));
     } else {

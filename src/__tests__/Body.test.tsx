@@ -12,9 +12,14 @@ describe('Body', () => {
     props = {
       codeBlocks: [],
       isValidTab: true,
+      settings: {
+        flag: true,
+        waitXHR: false,
+      },
       destroyBlock: jest.fn(),
       moveBlock: jest.fn(),
       recStatus: 'off',
+      submitSingleSetting: jest.fn(),
     };
   });
   it('Should render LandingBox when recStatus is off', () => {

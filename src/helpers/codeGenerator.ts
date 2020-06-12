@@ -56,6 +56,11 @@ function handleRoute(details: chrome.webRequest.WebResponseCacheDetails): string
   ];
 }
 
+function handleUrl(details: chrome.webNavigation.WebNavigationTransitionCallbackDetails): string {
+  const { origin, pathname } = new URL(details.url);
+  return `cy.url().should('contains', '${origin + pathname}')`;
+}
+
 export default {
   createBlock: (event: ParsedEvent): string => {
     switch (event.action) {
@@ -77,4 +82,7 @@ export default {
     (details: chrome.webRequest.WebResponseCacheDetails): string[] => handleRoute(details),
   createVisit: (url: string): string => `cy.visit('${url}');`,
   createServer: () => 'cy.server();',
+  createUrl:
+    (details: chrome.webNavigation.WebNavigationTransitionCallbackDetails)
+    : string => handleUrl(details),
 };

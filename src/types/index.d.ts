@@ -3,7 +3,8 @@ import { ControlAction } from '../constants';
 export type RecState =
   | 'off'
   | 'on'
-  | 'paused';
+  | 'paused'
+  | 'settings';
 
 export interface ParsedEvent {
   selector: string,
@@ -31,4 +32,14 @@ export interface ActionWithPayload {
 export interface Block {
   value: string,
   id: string,
+}
+
+export interface Settings {
+  waitXHR: boolean,
+  flag: boolean
+}
+
+export interface SingleSetting {
+  name: string,
+  value: any
 }

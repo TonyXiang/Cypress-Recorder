@@ -1,10 +1,12 @@
 import { generate } from 'shortid';
-import { RecState, Block } from '../types';
+import { RecState, Block, Settings } from '../types';
 
 export default class Model {
   status: RecState;
 
   processedCode: Block[];
+
+  settings: Settings;
 
   constructor() {
     this.sync();
@@ -16,7 +18,7 @@ export default class Model {
    */
   sync(): Promise<void> {
     return new Promise((resolve, reject) => {
-      chrome.storage.local.get(['status', 'codeBlocks'], result => {
+      chrome.storage.local.get(['status', 'codeBlocks', 'settings'], result => {
         if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
         else {
           if (result.status === 'on' || result.status === 'paused') {
@@ -26,7 +28,13 @@ export default class Model {
             this.status = 'off';
             this.processedCode = [];
           }
-          chrome.storage.local.set({ status: this.status, codeBlocks: this.processedCode }, () => {
+          this.settings = result.settings || {
+            waitXHR: false,
+            flag: true,
+          };
+          chrome.storage.local.set({
+            status: this.status, codeBlocks: this.processedCode, settings: this.settings,
+          }, () => {
             if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
             else resolve();
           });
@@ -149,6 +157,34 @@ export default class Model {
     return new Promise((resolve, reject) => {
       this.status = newStatus;
       chrome.storage.local.set({ status: this.status }, () => {
+        if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
+        else resolve();
+      });
+    });
+  }
+
+  /**
+   * Updates the settings.
+   * @param settings
+   */
+  updateSettings(newSettings: Settings): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.settings = newSettings;
+      chrome.storage.local.set({ settings: this.settings }, () => {
+        if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
+        else resolve();
+      });
+    });
+  }
+
+  /**
+   * Updates the processedCode.
+   * @param settings
+   */
+  updateCodeBlocks(blocks: Block[]): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.processedCode = blocks;
+      chrome.storage.local.set({ codeBlocks: this.processedCode }, () => {
         if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
         else resolve();
       });
